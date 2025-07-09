@@ -1,0 +1,41 @@
+[project]
+name = "grepl"
+version = "0.1.0"
+description = "sports metric learning"
+authors = [
+    {name = "John Curcio",email = "john.leonardo.curcion@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas (>=2.2.3,<3.0.0)",
+    "ipykernel (>=6.29.5,<7.0.0)",
+    "jupyter (>=1.1.1,<2.0.0)",
+    "opencv-python-headless (>=4.11.0.86,<5.0.0.0)",
+    "ipython (>=9.0.2,<10.0.0)",
+    "mmengine (>=0.10.7,<0.11.0)",
+    "mmdet (>=3.3.0,<4.0.0)",
+    "beautifulsoup4 (>=4.13.4,<5.0.0)",
+    "playwright (>=1.52.0,<2.0.0)",
+    "requests (>=2.32.3,<3.0.0)",
+    "selenium (>=4.33.0,<5.0.0)",
+    "webdriver-manager (>=4.0.2,<5.0.0)",
+    "python-dotenv (>=1.1.0,<2.0.0)",
+    "yt-dlp (>=2025.6.30,<2026.0.0)"
+]
+
+[tool.poetry.dependencies]
+depth_anything_v2 = { git = "https://github.com/DepthAnything/Depth-Anything-V2.git", branch = "main" }
+
+
+[tool.poetry]
+packages = [
+    { include = "grepl", from = "src" }
+]
+[tool.poetry.group.dev.dependencies]
+matplotlib = "^3.10.1"
+seaborn = "^0.13.2"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
