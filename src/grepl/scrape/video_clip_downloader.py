@@ -23,12 +23,16 @@ def parse_timestamped_url(url: str) -> tuple[str, int]:
     Supports URLs like:
       https://www.youtube.com/watch?v=VIDEO_ID&t=63s
       https://www.youtube.com/watch?v=VIDEO_ID&other=params&t=1m3s
+      https://youtu.be/Szj2-YS3J2o\?t\=115 TODO
     """
     parsed = urlparse(url)
     qs = parse_qs(parsed.query)
     # video ID
     video_id = None
-    if "v" in qs:
+    # support short youtu.be URLs
+    if parsed.netloc.endswith("youtu.be"):
+        video_id = parsed.path.lstrip("/")
+    elif "v" in qs:
         video_id = qs["v"][0]
     else:
         m = re.search(r'/embed/([^&?/]+)', url)
