@@ -64,9 +64,9 @@ def download_clip(video_id: str, start: int, duration: int = 60, output_dir: str
     """
     os.makedirs(output_dir, exist_ok=True)
     if bw:
-        filename = f"{video_id}_{start}.temp.mp4"
+        filename = f"{video_id}_{start}_{duration}.temp.mp4"
     else:
-        filename = f"{video_id}_{start}.mp4"
+        filename = f"{video_id}_{start}_{duration}.mp4"
     outtmpl = os.path.join(output_dir, filename)
     args_list = ['-ss', str(start), '-t', str(duration), '-an']
     ydl_opts = {
@@ -82,7 +82,7 @@ def download_clip(video_id: str, start: int, duration: int = 60, output_dir: str
         # If black-and-white requested, convert after download
     if bw:
         raw_path = outtmpl
-        bw_filename = f"{video_id}_{start}_bw.mp4"
+        bw_filename = f"{video_id}_{start}_{duration}_bw.mp4"
         bw_path = os.path.join(output_dir, bw_filename)
         subprocess.run(['ffmpeg', '-y', '-i', raw_path, '-vf', 'hue=s=0', bw_path], check=True)
         os.remove(raw_path)
