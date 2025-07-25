@@ -191,40 +191,7 @@ class OutlierDbScraper:
         Quickly scroll to the bottom of the page to reveal the Next button
         without waiting for content to fully load.
         """
-        print("Fast scrolling to bottom of page...")
-        # Use a shorter pause between scrolls for faster navigation
-        fast_pause = self.pause_sec / 4
-        
-        for i in range(max_scrolls):
-            # Scroll window directly, don't try to find container
-            self.driver.execute_script(f"window.scrollBy(0, {scroll_height});")
-            
-            # Brief pause to allow minimal rendering
-            time.sleep(fast_pause)
-            
-            # Check if we've reached the bottom
-            bottom_reached = self.driver.execute_script(
-                "return (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 200;"
-            )
-            
-            # Try to find the Next button
-            try:
-                next_btn = self.driver.find_element(
-                    By.XPATH, "(//button[contains(@class,'bg-green-500') and not(@disabled)])[last()]"
-                )
-                if next_btn.is_displayed():
-                    print(f"Found Next button after {i+1} scrolls")
-                    return True
-            except:
-                # Keep scrolling if button not found
-                pass
-            
-            if bottom_reached:
-                print("Reached bottom of page")
-                return True
-                
-        print(f"Max scrolls ({max_scrolls}) reached")
-        return False
+        raise NotImplementedError("Fast scrolling not implemented yet.")
 
     def skip_page(self, page_idx: int, n_scrolls: int) -> None:
         """
@@ -271,11 +238,13 @@ class OutlierDbScraper:
             # Get page source after iframes have loaded
             html = self.driver.page_source
             self.db.save_page(url, page_idx, scroll_idx, html)
-            
-            # wait a bit
-            # time.sleep(self.pause_sec)
+
 
     def click_next_btn(self) -> bool:
+        """
+        Click the "Next" button to navigate to the next page.
+        If the button is not found, try and find it. After 20 attempts, ask for manual intervention.
+        """
         max_attempts = 20 # this is really high but idgaf
         
         for attempt in range(max_attempts):
@@ -336,7 +305,6 @@ class OutlierDbScraper:
 
 if __name__ == "__main__":
     db = OutlierDbSqlite()
-    # db.conn.execute("DROP TABLE IF EXISTS raw_page;")
     db.create_table()
     # Launch a visible browser for manual login
     scraper = OutlierDbScraper(db, email="", password="", headless=False, pause_ms=1500, start_page=542) # TODO change to 317
