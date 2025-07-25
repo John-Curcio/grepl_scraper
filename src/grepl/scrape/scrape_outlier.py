@@ -48,10 +48,9 @@ class OutlierDbSqlite:
 
 
 class OutlierDbScraper:
-    def __init__(self, db: OutlierDbSqlite, email: str, password: str, headless: bool = True, pause_ms: int = 1200, start_page: int = 1):
+    def __init__(self, db: OutlierDbSqlite, headless: bool = True, pause_ms: int = 1200, start_page: int = 1):
         self.db = db
-        self.email = email
-        self.password = password
+        self.headless = headless
         self.start_page = start_page
         self._pages_left_to_skip = start_page - 1  # Adjust for zero-based index
         chrome_options = Options()
@@ -329,6 +328,6 @@ if __name__ == "__main__":
     db = OutlierDbSqlite()
     db.create_table()
     # Launch a visible browser for manual login
-    with OutlierDbScraper(db, email="", password="", headless=False, pause_ms=1500, start_page=1) as scraper:
+    with OutlierDbScraper(db, headless=False, pause_ms=1500, start_page=1) as scraper:
         scraper.manual_login()  # comment this out if we're already logged in and at the right page
         scraper.scrape_pages("https://outlierdb.com/", n_scrolls=23, n_pages=2000)
