@@ -187,7 +187,6 @@ class OutlierDbScraper:
         Scrape n_pages of the given url, scrolling n_scrolls times per page. Use 
         click_next_btn to navigate to the next page.
         """
-        self.driver.get(url)
         for page in range(n_pages):
             if self._pages_left_to_skip > 0:
                 self.skip_page(page, n_scrolls)
@@ -330,6 +329,6 @@ if __name__ == "__main__":
     db = OutlierDbSqlite()
     db.create_table()
     # Launch a visible browser for manual login
-    with OutlierDbScraper(db, email="", password="", headless=False, pause_ms=1500, start_page=542) as scraper:  # TODO change to 317
+    with OutlierDbScraper(db, email="", password="", headless=False, pause_ms=1500, start_page=1) as scraper:
         scraper.manual_login()  # comment this out if we're already logged in and at the right page
         scraper.scrape_pages("https://outlierdb.com/", n_scrolls=23, n_pages=2000)
