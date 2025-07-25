@@ -1,10 +1,28 @@
+# Using the scraper now (headless = False)
+
+Just
+```
+poetry run python src/grepl/scrape/scrape_outlier.py
+```
+
+And log into the window. Navigate the main outlierdb page (click x then navigate home)
+
+and press enter to let her rip
+
+This seems to be better than the way below:
+* don't have to quit other chrome windows (afaict)
+* don't have to run that 9223 command
+
+Expecting this to blow up in my face tonight but so far so good...
+-----
+
 # Using the scraper
 
 Quit all Chrome windows, then run this in the terminal:
 ```
 # first quit all Chrome windows
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --remote-debugging-port=9222 \
+  --remote-debugging-port=9223 \
   --user-data-dir="$HOME/chrome-debug-profile"
 ```
 This should open a new chrome window.
