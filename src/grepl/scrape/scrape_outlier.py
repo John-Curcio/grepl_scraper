@@ -3,14 +3,15 @@ from bs4 import BeautifulSoup
 import sqlite3
 import time
 import datetime
+import logging
 from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service as ChromeService # Add this import
-import os # Already imported but ensure it's available for log path
+from selenium.webdriver.chrome.service import Service as ChromeService  # Add this import
+import os  # Already imported but ensure it's available for log path
 import tempfile, shutil, atexit
 
 APPROX_CONTENT_HEIGHT = 900 # approximate height of a video content block. 
@@ -85,21 +86,31 @@ class OutlierDbScraper:
         log_path = os.path.join(os.getcwd(), "chromedriver.log")
         service = ChromeService(service_args=["--verbose"], log_output=log_path)
         
-        print(f"Attempting to use profile directory: {self.profile_dir}")
-        print(f"ChromeDriver log will be at: {log_path}")
+        logging.info("Attempting to use profile directory: %s", self.profile_dir)
+        logging.info("ChromeDriver log will be at: %s", log_path)
 
         try:
             # Launch Chrome with custom profile and service
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
         except Exception as e:
-            print(f"Error initializing WebDriver: {e}")
-            print(f"Profile directory that caused failure: {self.profile_dir}")
+            logging.error("Error initializing WebDriver: %s", e)
+            logging.error("Profile directory that caused failure: %s", self.profile_dir)
             # Attempt to clean up the problematic profile dir immediately if driver init fails
             self._cleanup_profile_dir() 
             raise
 
         self.pause_sec = pause_ms / 1000
         self.wait = WebDriverWait(self.driver, 60)
+
+    def __enter__(self):
+        """Return self to allow use as a context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        """Ensure the driver is closed when exiting a context."""
+        self.close()
+        # Do not suppress exceptions
+        return False
 
     def _cleanup_profile_dir(self):
         if hasattr(self, 'profile_dir') and self.profile_dir:
@@ -109,12 +120,12 @@ class OutlierDbScraper:
             # (e.g., by close() and then by atexit if the first attempt failed or was slow).
             self.profile_dir = None 
             
-            print(f"Cleaning up profile directory: {profile_dir_to_clean}")
+            logging.info("Cleaning up profile directory: %s", profile_dir_to_clean)
             try:
                 shutil.rmtree(profile_dir_to_clean)
-                print(f"Successfully removed profile directory: {profile_dir_to_clean}")
+                logging.info("Successfully removed profile directory: %s", profile_dir_to_clean)
             except Exception as e:
-                print(f"Error removing profile directory {profile_dir_to_clean}: {e}")
+                logging.error("Error removing profile directory %s: %s", profile_dir_to_clean, e)
         # else:
             # print("Debug: _cleanup_profile_dir called but profile_dir was None or not set.")
 
@@ -137,21 +148,21 @@ class OutlierDbScraper:
             # self.driver.execute_script("arguments[0].scrollTop = arguments[0].scrollTop + 2000;", container)
             self.driver.execute_script(f"arguments[0].scrollTop += {content_height};", container)
         except Exception:
-            print("Warning: could not find container, attempting to scroll window.")
+            logging.warning("Could not find container, attempting to scroll window.")
             self.driver.execute_script("window.scrollBy(0, 4000);")
 
         # Wait for page to load new content
         try:
             self.wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
         except Exception:
-            print("Warning: page load timeout, continuing.")
+            logging.warning("Page load timeout, continuing.")
 
     def manual_login(self, login_url: str = "https://outlierdb.com/login") -> None:
         """
         Open a browser window for manual login. Waits for user confirmation.
         """
         self.driver.get(login_url)
-        print("Please log in in the opened browser. Press Enter here to continue scraping...")
+        logging.info("Please log in in the opened browser. Press Enter here to continue scraping...")
         input()
 
     def _wait_for_youtube_iframes(self, timeout=10) -> bool:
@@ -167,7 +178,7 @@ class OutlierDbScraper:
             # print("YouTube iframes loaded successfully")
             return True
         except Exception as e:
-            print(f"Warning: Timeout waiting for YouTube iframes: {e}")
+            logging.warning("Timeout waiting for YouTube iframes: %s", e)
             return False
 
     # ---------- public API ---------------------------------------------------
@@ -176,7 +187,6 @@ class OutlierDbScraper:
         Scrape n_pages of the given url, scrolling n_scrolls times per page. Use 
         click_next_btn to navigate to the next page.
         """
-        self.driver.get(url)
         for page in range(n_pages):
             if self._pages_left_to_skip > 0:
                 self.skip_page(page, n_scrolls)
@@ -191,46 +201,13 @@ class OutlierDbScraper:
         Quickly scroll to the bottom of the page to reveal the Next button
         without waiting for content to fully load.
         """
-        print("Fast scrolling to bottom of page...")
-        # Use a shorter pause between scrolls for faster navigation
-        fast_pause = self.pause_sec / 4
-        
-        for i in range(max_scrolls):
-            # Scroll window directly, don't try to find container
-            self.driver.execute_script(f"window.scrollBy(0, {scroll_height});")
-            
-            # Brief pause to allow minimal rendering
-            time.sleep(fast_pause)
-            
-            # Check if we've reached the bottom
-            bottom_reached = self.driver.execute_script(
-                "return (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 200;"
-            )
-            
-            # Try to find the Next button
-            try:
-                next_btn = self.driver.find_element(
-                    By.XPATH, "(//button[contains(@class,'bg-green-500') and not(@disabled)])[last()]"
-                )
-                if next_btn.is_displayed():
-                    print(f"Found Next button after {i+1} scrolls")
-                    return True
-            except:
-                # Keep scrolling if button not found
-                pass
-            
-            if bottom_reached:
-                print("Reached bottom of page")
-                return True
-                
-        print(f"Max scrolls ({max_scrolls}) reached")
-        return False
+        raise NotImplementedError("Fast scrolling not implemented yet.")
 
     def skip_page(self, page_idx: int, n_scrolls: int) -> None:
         """
         Skip a page by quickly scrolling to the bottom to reveal the Next button.
         """
-        print(f"Fast skipping page {page_idx + 1}")
+        logging.info("Fast skipping page %s", page_idx + 1)
         
         # # Use the fast scrolling method instead of regular scrolling
         # self._fast_scroll_to_bottom(max_scrolls=n_scrolls, scroll_height=1500) # TODO not sure this works!
@@ -246,15 +223,15 @@ class OutlierDbScraper:
         try:
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         except Exception as e:
-            print(f"Error during final scroll: {e}")
+            logging.error("Error during final scroll: %s", e)
         
         # next button should be visible now
         if not self.click_next_btn():
-            print("Warning: Next button not found after fast scroll. Manual intervention may be needed.")
+            logging.warning("Next button not found after fast scroll. Manual intervention may be needed.")
             return
         # Decrement the pages left to skip
         self._pages_left_to_skip -= 1
-        print(f"Skipped page {page_idx + 1}, remaining pages to skip: {self._pages_left_to_skip}")
+        logging.info("Skipped page %s, remaining pages to skip: %s", page_idx + 1, self._pages_left_to_skip)
 
     def scrape_page(self, url: str, page_idx: int = 0, n_scrolls: int = 20) -> None:
         """
@@ -271,11 +248,13 @@ class OutlierDbScraper:
             # Get page source after iframes have loaded
             html = self.driver.page_source
             self.db.save_page(url, page_idx, scroll_idx, html)
-            
-            # wait a bit
-            # time.sleep(self.pause_sec)
+
 
     def click_next_btn(self) -> bool:
+        """
+        Click the "Next" button to navigate to the next page.
+        If the button is not found, try and find it. After 20 attempts, ask for manual intervention.
+        """
         max_attempts = 20 # this is really high but idgaf
         
         for attempt in range(max_attempts):
@@ -285,7 +264,11 @@ class OutlierDbScraper:
 
                 # Try a different scroll if not first attempt
                 if attempt > 0:
-                    print(f"Attempt {attempt+1}/{max_attempts}: Trying additional scrolling...")
+                    logging.info(
+                        "Attempt %s/%s: Trying additional scrolling...",
+                        attempt + 1,
+                        max_attempts,
+                    )
                     # Scroll up slightly and then down again (sometimes helps reveal buttons)
                     self.driver.execute_script("window.scrollBy(0, -500);")
                     time.sleep(self.pause_sec / 2)
@@ -296,12 +279,17 @@ class OutlierDbScraper:
                     EC.element_to_be_clickable((By.XPATH, "(//button[contains(@class,'bg-green-500') and not(@disabled)])[last()]"))
                 )
                 next_btn.click()
-                print("Clicked Next; waiting for page load")
+                logging.info("Clicked Next; waiting for page load")
                 time.sleep(self.pause_sec)
                 return True
             
             except Exception as e:
-                print(f"Attempt {attempt+1}/{max_attempts} failed: {str(e)[:100]}...")
+                logging.warning(
+                    "Attempt %s/%s failed: %s...",
+                    attempt + 1,
+                    max_attempts,
+                    str(e)[:100],
+                )
                 
                 # Wait a bit longer on retries
                 if attempt < max_attempts - 1:
@@ -309,19 +297,21 @@ class OutlierDbScraper:
         
         # If all automated attempts failed, ask for manual intervention
         if not self.driver.execute_script("return document.hidden"):
-            print("\n" + "=" * 80)
-            print("MANUAL INTERVENTION NEEDED: Next button could not be found automatically.")
-            print("Please navigate to the next page manually in the browser window.")
-            print("After navigating to the next page, press Enter to continue scraping...")
-            print("=" * 80 + "\n")
+            logging.warning("\n" + "=" * 80)
+            logging.warning("MANUAL INTERVENTION NEEDED: Next button could not be found automatically.")
+            logging.warning("Please navigate to the next page manually in the browser window.")
+            logging.warning("After navigating to the next page, press Enter to continue scraping...")
+            logging.warning("=" * 80 + "\n")
             input()  # Wait for user to confirm they've navigated
-            
+
             # Return True since the user has presumably navigated to the next page
-            print("Resuming automated scraping...")
+            logging.info("Resuming automated scraping...")
             return True
         else:
-            print("Browser is not visible (headless mode). Cannot request manual intervention.")
-            print("Stopping pagination.")
+            logging.warning(
+                "Browser is not visible (headless mode). Cannot request manual intervention."
+            )
+            logging.info("Stopping pagination.")
             return False
 
     def close(self) -> None:
@@ -329,19 +319,16 @@ class OutlierDbScraper:
             try:
                 self.driver.quit()
             except Exception as e:
-                print(f"Error during driver.quit(): {e}")
+                logging.error("Error during driver.quit(): %s", e)
         # Explicitly clean up profile dir on close, atexit is a fallback
         self._cleanup_profile_dir()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     db = OutlierDbSqlite()
-    # db.conn.execute("DROP TABLE IF EXISTS raw_page;")
     db.create_table()
     # Launch a visible browser for manual login
-    scraper = OutlierDbScraper(db, email="", password="", headless=False, pause_ms=1500, start_page=542) # TODO change to 317
-    scraper.manual_login() # comment this out if we're already logged in and at the right page
-    try:
+    with OutlierDbScraper(db, email="", password="", headless=False, pause_ms=1500, start_page=1) as scraper:
+        scraper.manual_login()  # comment this out if we're already logged in and at the right page
         scraper.scrape_pages("https://outlierdb.com/", n_scrolls=23, n_pages=2000)
-    finally:
-        scraper.close()
