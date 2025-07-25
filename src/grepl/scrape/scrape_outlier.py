@@ -2,6 +2,7 @@
 from bs4 import BeautifulSoup
 import sqlite3
 import time
+import datetime
 from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -20,6 +21,7 @@ class OutlierDbSqlite:
 
     def __init__(self):
         self.create_table()
+        self.snapshot_ts = datetime.datetime.utcnow().isoformat()  # Default snapshot timestamp
 
     def create_table(self):
         with self.conn:
@@ -37,12 +39,10 @@ class OutlierDbSqlite:
             )
 
     def save_page(self, url: str, page_idx: int, scroll_idx: int, html: str) -> None:
-        import datetime
-        snapshot_ts = datetime.datetime.utcnow().isoformat()
         with self.conn:
             self.conn.execute(
                 "INSERT INTO raw_page (url, page_idx, scroll_idx, snapshot_ts, content) VALUES (?,?,?,?,?)",
-                (url, page_idx, scroll_idx, snapshot_ts, html),
+                (url, page_idx, scroll_idx, self.snapshot_ts, html),
             )
 
 
@@ -339,7 +339,7 @@ if __name__ == "__main__":
     # db.conn.execute("DROP TABLE IF EXISTS raw_page;")
     db.create_table()
     # Launch a visible browser for manual login
-    scraper = OutlierDbScraper(db, email="", password="", headless=False, pause_ms=1500, start_page=317) # TODO change to 317
+    scraper = OutlierDbScraper(db, email="", password="", headless=False, pause_ms=1500, start_page=542) # TODO change to 317
     scraper.manual_login() # comment this out if we're already logged in and at the right page
     try:
         scraper.scrape_pages("https://outlierdb.com/", n_scrolls=23, n_pages=2000)
