@@ -24,21 +24,24 @@ class OutlierDbSqlite:
         with self.conn:
             self.conn.execute(
                 """
-                CREATE TABLE IF NOT EXISTS raw_page0 (
+                CREATE TABLE IF NOT EXISTS raw_page (
                     url           TEXT,
                     page_idx      INTEGER,
                     scroll_idx    INTEGER,
+                    snapshot_ts   TEXT,  -- ISO8601 timestamp
                     content       TEXT,
-                    UNIQUE(url, page_idx, scroll_idx)
+                    UNIQUE(url, page_idx, scroll_idx, snapshot_ts)
                 )
                 """
             )
 
     def save_page(self, url: str, page_idx: int, scroll_idx: int, html: str) -> None:
+        import datetime
+        snapshot_ts = datetime.datetime.utcnow().isoformat()
         with self.conn:
             self.conn.execute(
-                "INSERT INTO raw_page0 (url, page_idx, scroll_idx, content) VALUES (?,?,?,?)",
-                (url, page_idx, scroll_idx, html),
+                "INSERT INTO raw_page (url, page_idx, scroll_idx, snapshot_ts, content) VALUES (?,?,?,?,?)",
+                (url, page_idx, scroll_idx, snapshot_ts, html),
             )
 
 
@@ -199,9 +202,10 @@ if __name__ == "__main__":
     # db.conn.execute("DROP TABLE IF EXISTS raw_page;")
     db.create_table()
     # Launch a visible browser for manual login
-    scraper = OutlierDbScraper(db, email="", password="", headless=True, pause_ms=1000)
+    # scraper = OutlierDbScraper(db, email="", password="", headless=True, pause_ms=1500)
+    scraper = OutlierDbScraper(db, email="", password="", headless=False, pause_ms=1500)
     scraper.manual_login()
     try:
-        scraper.scrape_pages("https://outlierdb.com/", n_scrolls=20, n_pages=2000)
+        scraper.scrape_pages("https://outlierdb.com/", n_scrolls=23, n_pages=2000)
     finally:
         scraper.close()
