@@ -33,6 +33,10 @@ class ParsedOutlierDbSqlite:
                 """
             )
 
+    def drop_table(self):
+        with self.conn:
+            self.conn.execute("DROP TABLE IF EXISTS parsed_page")
+
     def parse_page(self, url: str, page_idx: int, scroll_idx: int) -> (list[str], str, str, str, str):
         """Reads the raw_page content for the given url, page_idx, scroll_idx,
         and parses it into tags, video_url, title, and caption."""
