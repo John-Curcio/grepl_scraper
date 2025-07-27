@@ -209,7 +209,6 @@ class OutlierDbScraper:
         logging.info("Fast skipping page %s", page_idx + 1)
         
         # # Use the fast scrolling method instead of regular scrolling
-        # self._fast_scroll_to_bottom(max_scrolls=n_scrolls, scroll_height=1500) # TODO not sure this works!
         for scroll_idx in tqdm(range(n_scrolls), total=n_scrolls, desc=f"Scrolling thru page {page_idx+1}"):
             # print(f"Scrolling {scroll_idx}")
             self._scroll_container()
