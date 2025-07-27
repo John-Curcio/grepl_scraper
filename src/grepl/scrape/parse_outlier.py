@@ -2,7 +2,7 @@
 TODO FIXME items:
 * can we refactor this into another dataclass?
 * don't like this extra for loop in parse_all
-* does it make sense to use all these class methods?
+* does it make sense to use all these classmethods? they aren't public...
 * get rid of url, page_idx, scroll_idx? maybe just snapshot_ts
 * If I get multiple youtube_ids in a block, i want to crash. is that actually working here?
 * My _extract_tags_from_block method is getting ONLY the tags associated with the youtube ID,
@@ -216,7 +216,6 @@ class ParsedOutlierDbSqlite:
             # curr_data["scroll_idx"] = scroll_idx
             # curr_data["snapshot_ts"] = snapshot_ts
             # final_data.append(curr_data)
-        # TODO FIXME save final_data in one big dump?
             
         
 if __name__ == "__main__":
