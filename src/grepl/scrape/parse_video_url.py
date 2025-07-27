@@ -47,8 +47,7 @@ class VideoUrlParser:
         if youtube_id is None or len(youtube_id) != 11:
             raise ValueError(f"youtube_id {youtube_id} appears to be invalid")
         # Extract timestamp from caption, e.g., '01:03' or '01:23:45'
-        # TODO I can't figure out how to write an optional capture group. whatever...
-        # TODO also idk what this ^ does at the start
+        # TODO later, try an optional hours group: ^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})
         total_seconds = None
         if hour_ts_match := re.match(r'^(\d{1,2}):(\d{2}):(\d{2})', caption):
             hours, minutes, seconds = hour_ts_match.groups()

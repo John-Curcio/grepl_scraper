@@ -1,12 +1,9 @@
 """
-TODO FIXME items:
+TODO items:
 * can we refactor this into another dataclass?
 * don't like this extra for loop in parse_all
-* does it make sense to use all these classmethods? they aren't public...
 * get rid of url, page_idx, scroll_idx? maybe just snapshot_ts
 * If I get multiple youtube_ids in a block, i want to crash. is that actually working here?
-* My _extract_tags_from_block method is getting ONLY the tags associated with the youtube ID,
-    right? I guess if my block filtering is good, then yes.
 """
 
 import bs4
@@ -21,8 +18,8 @@ class ParsedOutlierDbSqlite:
         self.drop_table()
         self.create_table()
 
-    @classmethod
-    def _extract_youtube_id_from_block(cls, block: bs4.element.Tag) -> str:
+    @staticmethod
+    def _extract_youtube_id_from_block(block: bs4.element.Tag) -> str:
         """
         Extracts the YouTube video ID from a block of HTML content.
 
@@ -61,8 +58,8 @@ class ParsedOutlierDbSqlite:
             raise ValueError(f"Multiple YouTube IDs found in block: {youtube_ids}")
         return ''
 
-    @classmethod
-    def _extract_description_from_block(cls, block: bs4.element.Tag) -> str:
+    @staticmethod
+    def _extract_description_from_block(block: bs4.element.Tag) -> str:
         """
         Extracts the video description from a block of HTML content.
 
@@ -79,8 +76,8 @@ class ParsedOutlierDbSqlite:
             raise ValueError("No video description found in block")
         return video_description.text.strip()
 
-    @classmethod
-    def _extract_tags_from_block(cls, block: bs4.element.Tag) -> list[str]:
+    @staticmethod
+    def _extract_tags_from_block(block: bs4.element.Tag) -> list[str]:
         """
         Extracts the tags from a block of HTML content.
 
@@ -101,8 +98,8 @@ class ParsedOutlierDbSqlite:
                 tags.append(tag)
         return tags
 
-    @classmethod
-    def _extract_data_from_block(cls, block: bs4.element.Tag) -> dict:
+    @staticmethod
+    def _extract_data_from_block(block: bs4.element.Tag) -> dict:
         """
         Extracts data from a single block of HTML content.
 
@@ -113,9 +110,9 @@ class ParsedOutlierDbSqlite:
             dict: A dictionary containing the extracted data.
         """
         try:
-            youtube_id = cls._extract_youtube_id_from_block(block)
-            video_description = cls._extract_description_from_block(block)
-            tags = cls._extract_tags_from_block(block)
+            youtube_id = ParsedOutlierDbSqlite._extract_youtube_id_from_block(block)
+            video_description = ParsedOutlierDbSqlite._extract_description_from_block(block)
+            tags = ParsedOutlierDbSqlite._extract_tags_from_block(block)
         except ValueError as e:
             print(f"Error extracting data: {e}")
             print(block.contents)
@@ -221,4 +218,5 @@ class ParsedOutlierDbSqlite:
 if __name__ == "__main__":
     db = ParsedOutlierDbSqlite()
     # db.drop_table()
+    db.parse_all()
     db.parse_all()
